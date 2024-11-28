@@ -12,7 +12,7 @@ public class ProductDto {
 
   private String name;
 
-  private String price;
+  private Long price;
 
   private Long quantity;
 
