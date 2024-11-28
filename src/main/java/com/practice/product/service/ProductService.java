@@ -16,7 +16,7 @@ public class ProductService {
 
   private final ProductRepository productRepository;
 
-  public void save(List<ProductDto> productDto){
+  public void save(List<ProductDto> productDto) {
     List<Product> products = productDto.stream().map(ProductDto::toEntity).toList();
     productRepository.saveAll(products);
   }

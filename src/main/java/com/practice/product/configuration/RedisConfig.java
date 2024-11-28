@@ -1,5 +1,8 @@
 package com.practice.product.configuration;
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,20 +20,14 @@ public class RedisConfig {
   @Value("${spring,data.redis.port")
   private Integer port;
 
-  @Bean
-  public RedisConnectionFactory connectionFactory(){
-    RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration(host,port);
-
-    return new LettuceConnectionFactory(redisStandaloneConfiguration);
-  }
+  private static final String REDIS_HOST_PREFIX = "redis://";
 
   @Bean
-  public RedisTemplate<String, Object> redisTemplate(){
-    RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
-    redisTemplate.setConnectionFactory(connectionFactory());
-    redisTemplate.setKeySerializer(new StringRedisSerializer());
-    redisTemplate.setValueSerializer(new StringRedisSerializer());
-    return redisTemplate;
+  public RedissonClient redissonClient(){
+    Config config = new Config();
+    config.useSingleServer()
+        .setAddress(REDIS_HOST_PREFIX + host +":" + port);
+    return Redisson.create(config);
   }
 
 }
