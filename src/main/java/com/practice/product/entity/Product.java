@@ -33,4 +33,11 @@ public class Product {
         .quantity(this.quantity)
         .build();
   }
+
+  public void decrease(Long orderQuantity){
+    if(quantity - orderQuantity<0){
+      throw new IllegalArgumentException();
+    }
+    this.quantity -= orderQuantity;
+  }
 }

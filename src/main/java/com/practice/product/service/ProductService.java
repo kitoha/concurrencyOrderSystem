@@ -22,7 +22,7 @@ public class ProductService {
   }
 
   public List<ProductDto> getProductInfo(Pageable pageable){
-    List<Product> products = Optional.ofNullable(productRepository.findByAll(pageable))
+    List<Product> products = Optional.ofNullable(productRepository.findAll(pageable))
         .map(Page::getContent).orElseThrow(()->new IllegalArgumentException("not found"));
 
     return products.stream().map(Product::toDto).toList();
