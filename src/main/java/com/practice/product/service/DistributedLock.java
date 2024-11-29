@@ -14,22 +14,22 @@ public class DistributedLock {
 
   private final RedissonClient redissonClient;
   private static final String LOCK_PREFIX = "Lock:";
-  private static final Long LOCK_WAIT_TIME = 5L;
-  private static final Long LOCK_RELEASE_TIME = 10L;
+  private static final Long LOCK_WAIT_TIME = 1L;
+  private static final Long LOCK_RELEASE_TIME = 3L;
 
-  public boolean getLock(String key){
+  public RLock acquireLock(String key){
     String lockKey = LOCK_PREFIX + key;
     RLock lock = redissonClient.getLock(lockKey);
 
     try{
-      return lock.tryLock(LOCK_WAIT_TIME, LOCK_RELEASE_TIME, TimeUnit.SECONDS);
-    }catch (InterruptedException e){
-      log.error("Redisson Lock Failed Lock Key : {}",lockKey,e);
-      return false;
-    } finally {
-      if(lock.isHeldByCurrentThread()){
-        lock.unlock();
+      if(lock.tryLock(LOCK_WAIT_TIME, LOCK_RELEASE_TIME, TimeUnit.SECONDS)) {
+        return lock;
+      }else{
+        throw new IllegalStateException("Unable to acquire lock for key: " + lockKey);
       }
+    }catch (InterruptedException e){
+      log.error("Redisson Lock Failed Lock Key : {}", lockKey, e);
+      throw new IllegalStateException("Lock acquisition interrupted", e);
     }
   }
 

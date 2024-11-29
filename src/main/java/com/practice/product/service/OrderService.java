@@ -5,15 +5,20 @@ import com.practice.product.entity.Product;
 import com.practice.product.repository.ProductRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
   private final DistributedLock distributedLock;
   private final ProductRepository productRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public void order(List<OrderDto> orderDtos){
@@ -22,10 +27,15 @@ public class OrderService {
 
   private void processOrder(OrderDto orderDto){
     String productKey = Long.toString(orderDto.getProductId());
-    if(distributedLock.getLock(productKey)) {
+    RLock lock = distributedLock.acquireLock(productKey);
+    try {
       Product product = productRepository.findById(orderDto.getProductId())
           .orElseThrow(() -> new IllegalArgumentException("product not found"));
       product.decrease(orderDto.getQuantity());
+      productRepository.save(product);
+      eventPublisher.publishEvent(lock);
+    } catch (Exception e){
+      log.error("order failed");
     }
   }
 
