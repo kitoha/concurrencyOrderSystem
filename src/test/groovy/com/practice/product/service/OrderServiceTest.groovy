@@ -3,6 +3,7 @@ package com.practice.product.service
 import com.practice.product.dto.OrderDto
 import com.practice.product.entity.Product
 import com.practice.product.repository.ProductRepository
+import groovy.util.logging.Slf4j
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -14,6 +15,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+@Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 class OrderServiceTest extends Specification {
@@ -87,6 +89,45 @@ class OrderServiceTest extends Specification {
             executorService.submit(() -> {
                 try {
                     orderService.orderWithLock(orderDto)
+                } catch (Exception e) {
+                    throw new RuntimeException()
+                } finally {
+                    countDownLatch.countDown()
+                }
+            })
+        }
+
+        countDownLatch.await()
+        executorService.shutdown()
+
+        Product product = productRepository.findById(1L).map {it->it}.orElse(null)
+
+        then:
+        product.getQuantity() == 0
+    }
+
+    /**
+     * 낙관적 락
+     * 제품 번호 1번의 주문이 동시에 10개가 들어온다. 기존에 제품 갯수는 10개로 되어있다.
+     * 이럴 경우 제품의 결과는 0개가 되어야한다.
+     */
+    def "낙관적 락 격리수준 주문 동시성 테스트"(){
+        given:
+        int threadCount = 10
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount)
+        CountDownLatch countDownLatch = new CountDownLatch(threadCount)
+        OrderDto orderDto = OrderDto.builder()
+                .productId(1L)
+                .quantity(1)
+                .build()
+
+        when:
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    log.info("Thread {} is attempting to process order",Thread.currentThread().getId())
+                    Thread.sleep(100)
+                    orderService.orderWithOptimisticLock(orderDto)
                 } catch (Exception e) {
                     throw new RuntimeException()
                 } finally {

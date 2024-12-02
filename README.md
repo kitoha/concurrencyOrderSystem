@@ -27,12 +27,18 @@
 
 비관적 락 : 충돌이 난다는 가정하에 사용하며 하나의 리소스에 대해 락을 이용해 잠금을 처리
 
-난곽적 락 : 충돌이 별로 나지 않는다는 가정에서 사용하며 version정보를 바탕으로 충돌이 날 시 롤백
+```java
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select p from Product p where p.id = :id")
+  Optional<Product> findByIdWithLock(Long id);
+```
 
-3. Transaction 격리 레벨 
+낙곽적 락 : 충돌이 별로 나지 않는다는 가정에서 사용하며 version 정보를 바탕으로 충돌이 날 시 롤백
 
-- UNCOMMITED_READ
-- COMMITED_READ
-- REPEATABLE_READ
-- SERIALIZED
+```java
+  @Lock(LockModeType.OPTIMISTIC)
+  @Query("select p from Product p where p.id = :id")
+  Optional<Product> findByIdWithOptimisticLock(Long id);
+```
+
 
