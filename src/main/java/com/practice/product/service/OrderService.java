@@ -1,6 +1,7 @@
 package com.practice.product.service;
 
 import com.practice.product.dto.OrderDto;
+import com.practice.product.entity.Order;
 import com.practice.product.entity.Product;
 import com.practice.product.repository.ProductRepository;
 import java.util.List;
@@ -36,6 +37,18 @@ public class OrderService {
       eventPublisher.publishEvent(lock);
     } catch (Exception e){
       log.error("order failed");
+    }
+  }
+
+  @Transactional
+  public void orderWithLock(OrderDto orderDto){
+    try {
+      Product product = productRepository.findByIdWithLock(orderDto.getProductId())
+          .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+      product.decrease(orderDto.getQuantity());
+      productRepository.save(product);
+    }catch (Exception e) {
+      log.error("Order failed for product {}: {}", orderDto.getProductId(), e.getMessage());
     }
   }
 

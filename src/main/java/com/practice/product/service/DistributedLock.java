@@ -20,7 +20,6 @@ public class DistributedLock {
   public RLock acquireLock(String key){
     String lockKey = LOCK_PREFIX + key;
     RLock lock = redissonClient.getLock(lockKey);
-
     try{
       if(lock.tryLock(LOCK_WAIT_TIME, LOCK_RELEASE_TIME, TimeUnit.SECONDS)) {
         return lock;
